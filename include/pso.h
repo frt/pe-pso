@@ -7,17 +7,23 @@ typedef struct dimension {
     double max;
 } dimension_t;
 
+typedef struct limits {
+    dimension_t *dimensions;    // an array of nr_dimensions elements
+    int nr_dimensions;
+} limits_t;
+
 typedef struct particle particle_t;
 struct particle {
     double *x;                  // an array of nr_dimensions elements
-
-    dimension_t *dimensions;    // an array of nr_dimensions elements
-    int nr_dimensions;
 
     double fitness;
     double *velocity;           // an array of nr_dimensions elements
     particle_t *previous_best;
 };
 
-bool particle_create(particle_t **particle, int nr_dimensions);
+/**
+ * Creates an empty new particle.
+ */
+particle_t *particle_create(limits_t *dimensions_limits);
+
 void particle_destroy(particle_t *particle);
