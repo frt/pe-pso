@@ -16,12 +16,16 @@ fi
 
 # Checks for libraries.
 AC_CHECK_LIB([m], [cos], , AC_MSG_ERROR([unable to find the cos() function]))
+AC_CHECK_LIB([mtwist], [mt_seed], , AC_MSG_ERROR([mtwist library not found]))
+AC_CHECK_LIB([mtwist], [mt_ldrand], , AC_MSG_ERROR([mtwist library not found]))
+
 AC_CHECK_LIB([parallel_evolution], [parallel_evolution_run], [],
              AC_MSG_ERROR([parallel_evolution library not found]), [-L/usr/lib/openmpi -lmpi])
 #AC_CHECK_LIB([topology_parser], [topology_parser_parse])
 
 # Checks for header files.
 AC_CHECK_HEADER([parallel_evolution.h],,AC_MSG_ERROR([parallel_evolution.h not found]))
+AC_CHECK_HEADER([mtwist.h], [], [AC_MSG_ERROR(mtwist.h missing (get it at https://github.com/frt/mtwist))])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL

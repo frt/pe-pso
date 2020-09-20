@@ -5,4 +5,5 @@ pe_pso_SOURCES = pso.c main.c
 pe_pso_LDADD = -L$(libdir) \
 			   -lparallel_evolution \
 			   -ltopology_parser \
+			   -lmtwist \
 			   -lm

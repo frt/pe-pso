@@ -21,15 +21,17 @@ struct particle {
     double *x;                  // an array of nr_dimensions elements
     double fitness;
     double *velocity;           // an array of nr_dimensions elements
-    particle_t *previous_best;
+
+    double *previous_best;
+    double previous_best_fitness;
 
     neighbourhood_t neighbours;
 };
 
 typedef struct swarm {
-    particle_t *particles;
+    particle_t **particles;
     int nr_particles;
-    limits_t search_space;
+    limits_t *search_space;
 } swarm_t;
 
 /**
@@ -38,5 +40,12 @@ typedef struct swarm {
  * \return The pointer to the particle created or NULL if creation fails.
  */
 particle_t *particle_create(limits_t *dimensions_limits);
-
 void particle_destroy(particle_t *particle);
+
+/**
+ * Creates the initial swarm.
+ *
+ * \return The pointer to the swarm created or NULL if failed.
+ */
+swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fitness_func)(double *x));
+void swarm_destroy(swarm_t *swarm);
