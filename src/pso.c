@@ -67,7 +67,6 @@ swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fi
     new->particles = (particle_t **)calloc(nr_particles, sizeof(particle_t *));
     if (new->particles == NULL)
         goto fail;
-    new->nr_particles = nr_particles;
 
     // create and init each particle
     mt_seed();
@@ -76,7 +75,9 @@ swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fi
         if (new_particle == NULL)
             goto fail;
         particle_init(new_particle, dimensions_limits, fitness_func);
+        new->particles[i] = new_particle;
     }
+    new->nr_particles = nr_particles;
 
     new->search_space = dimensions_limits;
 
