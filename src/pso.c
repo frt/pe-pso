@@ -55,7 +55,7 @@ void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*f
     particle->previous_best_fitness = particle->fitness;
 }
 
-swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fitness_func)(double *x))
+swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x))
 {
     swarm_t *new;
     particle_t *new_particle;
@@ -64,22 +64,24 @@ swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fi
     if (new == NULL)
         goto fail;
 
-    new->particles = (particle_t **)calloc(nr_particles, sizeof(particle_t *));
+    new->particles = (particle_t **)calloc(pso_config->nr_particles, sizeof(particle_t *));
     if (new->particles == NULL)
         goto fail;
 
     // create and init each particle
     mt_seed();
-    for (int i = 0; i < nr_particles; ++i) {
-        new_particle = particle_create(dimensions_limits);
+    for (int i = 0; i < pso_config->nr_particles; ++i) {
+        new_particle = particle_create(pso_config->search_space_limits);
         if (new_particle == NULL)
             goto fail;
-        particle_init(new_particle, dimensions_limits, fitness_func);
+        particle_init(new_particle, pso_config->search_space_limits, fitness_func);
         new->particles[i] = new_particle;
     }
-    new->nr_particles = nr_particles;
+    new->nr_particles = pso_config->nr_particles;
 
-    new->search_space = dimensions_limits;
+    new->search_space = pso_config->search_space_limits;
+
+    // TODO: init neighbourhoods
 
     return new;
 
@@ -95,4 +97,19 @@ void swarm_destroy(swarm_t *swarm)
             particle_destroy(swarm->particles[i]);
     }
     free(swarm);
+}
+
+int iterarions(swarm_t *swarm, int nr_iterations)
+{
+    int i;
+
+    // update particles positions
+    for (i = 0; i < nr_iterations; ++i) {
+    }
+
+    // update particles neighbourhoods
+    for (i = 0; i < nr_iterations; ++i) {
+    }
+
+    return i;
 }

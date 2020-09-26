@@ -28,6 +28,12 @@ struct particle {
     neighbourhood_t neighbours;
 };
 
+typedef struct pso_config {
+    limits_t *search_space_limits;
+    int nr_particles;
+    int nr_neighbours;
+} pso_config_t;
+
 typedef struct swarm {
     particle_t **particles;
     int nr_particles;
@@ -47,5 +53,15 @@ void particle_destroy(particle_t *particle);
  *
  * \return The pointer to the swarm created or NULL if failed.
  */
-swarm_t *swarm_create(limits_t *dimensions_limits, int nr_particles, double (*fitness_func)(double *x));
+swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x));
 void swarm_destroy(swarm_t *swarm);
+
+/**
+ * Run iterations.
+ *
+ * \param swarm The swarm.
+ * \param nr_iterations The maximum number of iterations.
+ *
+ * \return The number of iterations that where run.
+ */
+int iterarions(swarm_t *swarm, int nr_iterations);
