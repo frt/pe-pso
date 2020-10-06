@@ -12,11 +12,6 @@ typedef struct limits {
     int nr_dimensions;
 } limits_t;
 
-typedef struct neighbourhood {
-    particle_t **neighbours;    // an array of pointers to particles
-    int nr_neighbours;
-} neighbourhood_t;
-
 struct particle {
     double *x;                  // an array of nr_dimensions elements
     double fitness;
@@ -25,7 +20,8 @@ struct particle {
     double *previous_best;
     double previous_best_fitness;
 
-    neighbourhood_t neighbours;
+    particle_t **neighbours;    // an array of pointers to particles
+    double neighbourhood_best_fitness;
 };
 
 typedef struct pso_config {

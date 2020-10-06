@@ -1,5 +1,6 @@
 CC=$(MPICC)
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(prefix)/include
+AM_CFLAGS = -std=gnu89	# need this for compatibility with libmtwist
 bin_PROGRAMS = pe-pso
 pe_pso_SOURCES = pso.c main.c
 pe_pso_LDADD = -L$(libdir) \
