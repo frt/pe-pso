@@ -100,7 +100,7 @@ bool set_neighbourhoods(particle_t **particles, pso_config_t *pso_config)
         for (j = 0; j < k; ++j) {
             informed_idx = rd_iuniform(0, nr_particles);
             particles[i]->neighbours[j] = particles[informed_idx];
-            if (particles[i]->fitness < best_neighbours[informed_idx]->fitness)
+            if (particles[i]->previous_best_fitness < best_neighbours[informed_idx]->previous_best_fitness)
                 best_neighbours[informed_idx] = particles[i];
         }
     }
@@ -108,8 +108,8 @@ bool set_neighbourhoods(particle_t **particles, pso_config_t *pso_config)
     // copy the informants data
     // so the copy is done only once
     for (i = 0; i < nr_particles; ++i) {
-        particles[i]->neighbourhood_best_fitness = best_neighbours[i]->fitness;
-        memcpy(particles[i]->neighbourhood_best_x, best_neighbours[i]->x, nr_dimensions * sizeof(double));
+        particles[i]->neighbourhood_best_fitness = best_neighbours[i]->previous_best_fitness;
+        memcpy(particles[i]->neighbourhood_best_x, best_neighbours[i]->previous_best_x, nr_dimensions * sizeof(double));
     }
 
     free(best_neighbours);
