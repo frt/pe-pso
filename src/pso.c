@@ -1,13 +1,16 @@
 #include "pso.h"
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <randistrs.h>
 
-particle_t *particle_create(limits_t *dimensions_limits)
+particle_t *particle_create(pso_config_t *pso_config)
 {
     particle_t *new;
-    int nr_dimensions = dimensions_limits->nr_dimensions;
+    int nr_dimensions = pso_config->search_space_limits->nr_dimensions;
+    int nr_neighbours = pso_config->nr_neighbours;
 
     new = (particle_t *)calloc(1, sizeof(particle_t));
     if (new == NULL)
@@ -25,11 +28,32 @@ particle_t *particle_create(limits_t *dimensions_limits)
         return NULL;
     }
 
+    new->previous_best_x = (double *)malloc(nr_dimensions * sizeof(double));
+    if (new->previous_best_x == NULL) {
+        particle_destroy(new);
+        return NULL;
+    }
+
+    new->neighbours = (particle_t **)malloc(nr_neighbours * sizeof(particle_t *));
+    if (new->neighbours == NULL) {
+        particle_destroy(new);
+        return NULL;
+    }
+
+    new->neighbourhood_best_x = (double *)malloc(nr_dimensions * sizeof(double));
+    if (new->neighbourhood_best_x == NULL) {
+        particle_destroy(new);
+        return NULL;
+    }
+
     return new;
 }
 
 void particle_destroy(particle_t *particle)
 {
+    free(particle->neighbourhood_best_x);
+    free(particle->neighbours);
+    free(particle->previous_best_x);
     free(particle->velocity);
     free(particle->x);
     free(particle);
@@ -44,7 +68,9 @@ void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*f
         int max_d = dimensions_limits->dimensions[i].max;
 
         particle->x[i] = rd_uniform(min_d, max_d);
-        particle->previous_best[i] = particle->x[i];
+        particle->previous_best_x[i] = particle->x[i];
+        particle->neighbourhood_best_x[i] = particle->x[i];
+
         particle->velocity[i] = rd_uniform(min_d - particle->x[i], max_d - particle->x[i]);
     }
     particle->fitness = fitness_func(particle->x);
@@ -52,21 +78,42 @@ void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*f
     particle->neighbourhood_best_fitness = particle->fitness;
 }
 
-void set_neighbourhoods(particle_t **particles, int nr_particles, int k)
+bool set_neighbourhoods(particle_t **particles, pso_config_t *pso_config)
 {
-    int i, j;
-    particle_t *particle_informed;
+    int i, j, informed_idx;
+    particle_t **best_neighbours;
 
+    int nr_particles = pso_config->nr_particles;
+    int k = pso_config->nr_neighbours;
+    int nr_dimensions = pso_config->search_space_limits->nr_dimensions;
+
+    best_neighbours = (particle_t**)malloc(nr_particles * sizeof(particle_t*));
+    if (best_neighbours == NULL)
+        return false;
+
+    // at least informs itself
+    for (i = 0; i < nr_particles; ++i)
+        best_neighbours[i] = particles[i];
+
+    // selects the best informants
     for (i = 0; i < nr_particles; ++i) {
-        // at least informs itself
-        particles[i]->neighbourhood_best_fitness = particles[i]->fitness;
         for (j = 0; j < k; ++j) {
-            particle_informed = particles[rd_iuniform(0, nr_particles)];
-            particles[i]->neighbours[j] = particle_informed;
-            if (particle_informed->fitness < particles[i]->neighbourhood_best_fitness)
-                particles[i]->neighbourhood_best_fitness = particle_informed->fitness;
+            informed_idx = rd_iuniform(0, nr_particles);
+            particles[i]->neighbours[j] = particles[informed_idx];
+            if (particles[i]->fitness < best_neighbours[informed_idx]->fitness)
+                best_neighbours[informed_idx] = particles[i];
         }
     }
+
+    // copy the informants data
+    // so the copy is done only once
+    for (i = 0; i < nr_particles; ++i) {
+        particles[i]->neighbourhood_best_fitness = best_neighbours[i]->fitness;
+        memcpy(particles[i]->neighbourhood_best_x, best_neighbours[i]->x, nr_dimensions * sizeof(double));
+    }
+
+    free(best_neighbours);
+    return true;
 }
 
 swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x))
@@ -86,7 +133,7 @@ swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x
     // create and init each particle
     mt_seed();
     for (i = 0; i < pso_config->nr_particles; ++i) {
-        new_particle = particle_create(pso_config->search_space_limits);
+        new_particle = particle_create(pso_config);
         if (new_particle == NULL)
             goto fail;
         particle_init(new_particle, pso_config->search_space_limits, fitness_func);
@@ -96,9 +143,8 @@ swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x
 
     new->search_space = pso_config->search_space_limits;
 
-    set_neighbourhoods(new->particles, new->nr_particles, pso_config->nr_neighbours);
-
-    return new;
+    if (set_neighbourhoods(new->particles, pso_config))
+        return new;
 
 fail:
     swarm_destroy(new);
@@ -115,15 +161,22 @@ void swarm_destroy(swarm_t *swarm)
     free(swarm);
 }
 
-int iterarions(swarm_t *swarm, int nr_iterations)
+int iterarions(swarm_t *swarm, pso_config_t *pso_config, int nr_iterations)
 {
     int i;
+    double new_best_fitness;
 
     // update particles positions
     for (i = 0; i < nr_iterations; ++i) {
     }
 
     // update particles neighbourhoods
+    if (new_best_fitness < swarm->best_fitness)
+        set_neighbourhoods(swarm->particles, pso_config);
+    else {
+        // particles get informed by its neighbours
+    }
+
     for (i = 0; i < nr_iterations; ++i) {
     }
 

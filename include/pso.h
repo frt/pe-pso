@@ -17,10 +17,13 @@ struct particle {
     double fitness;
     double *velocity;           // an array of nr_dimensions elements
 
-    double *previous_best;
+    double *previous_best_x;      // previous best position
     double previous_best_fitness;
 
+    // particles informed by this one
     particle_t **neighbours;    // an array of pointers to particles
+
+    double *neighbourhood_best_x;
     double neighbourhood_best_fitness;
 };
 
@@ -34,6 +37,7 @@ typedef struct swarm {
     particle_t **particles;
     int nr_particles;
     limits_t *search_space;
+    double best_fitness;
 } swarm_t;
 
 /**
@@ -41,7 +45,7 @@ typedef struct swarm {
  *
  * \return The pointer to the particle created or NULL if creation fails.
  */
-particle_t *particle_create(limits_t *dimensions_limits);
+particle_t *particle_create(pso_config_t *pso_config);
 void particle_destroy(particle_t *particle);
 
 /**
@@ -55,9 +59,10 @@ void swarm_destroy(swarm_t *swarm);
 /**
  * Run iterations.
  *
- * \param swarm The swarm.
- * \param nr_iterations The maximum number of iterations.
+ * \param swarm The swarm
+ * \param pso_config PSO configurations
+ * \param nr_iterations The maximum number of iterations
  *
  * \return The number of iterations that where run.
  */
-int iterarions(swarm_t *swarm, int nr_iterations);
+int iterarions(swarm_t *swarm, pso_config_t *pso_config, int nr_iterations);
