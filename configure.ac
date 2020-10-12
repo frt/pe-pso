@@ -2,10 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
+AC_CONFIG_MACRO_DIRS([m4])
 AC_INIT([pe-pso], [0.0.0], [fr.teodoro@gmail.com])
 AC_CONFIG_SRCDIR([include/pso.h])
 AC_LANG(C)
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
