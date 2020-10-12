@@ -38,6 +38,7 @@ typedef struct swarm {
     int nr_particles;
     limits_t *search_space;
     double best_fitness;
+    int best_fitness_iteration;
 } swarm_t;
 
 /**

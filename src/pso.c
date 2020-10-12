@@ -138,8 +138,12 @@ swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x
             goto fail;
         particle_init(new_particle, pso_config->search_space_limits, fitness_func);
         new->particles[i] = new_particle;
+
+        if (i == 0 || new_particle->fitness < new->best_fitness)
+            new->best_fitness = new_particle->fitness;
     }
     new->nr_particles = pso_config->nr_particles;
+    new->best_fitness_iteration = 0;
 
     new->search_space = pso_config->search_space_limits;
 
