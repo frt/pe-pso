@@ -66,4 +66,4 @@ void swarm_destroy(swarm_t *swarm);
  *
  * \return The number of iterations that where run.
  */
-int iterarions(swarm_t *swarm, pso_config_t *pso_config, int nr_iterations);
+int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations);

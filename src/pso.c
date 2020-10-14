@@ -223,10 +223,11 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
     return true;
 }
 
-int iterarions(swarm_t *swarm, pso_config_t *pso_config, int nr_iterations)
+int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
 {
     int i;
-    double new_best_fitness;
+    double new_best_fitness = swarm->best_fitness;
+    int nr_dimensions = swarm->search_space->nr_dimensions;
 
     /* Maurice Clerc.
        Stagnation analysis in particle swarm optimization or
@@ -237,18 +238,26 @@ int iterarions(swarm_t *swarm, pso_config_t *pso_config, int nr_iterations)
 
     // update particles positions
     for (i = 0; i < nr_iterations; ++i) {
-        move_particle(swarm->particles[i], swarm->search_space->nr_dimensions, c, w);
-        // XXX calculate new fitness, etc.
+        move_particle(swarm->particles[i], nr_dimensions, c, w);
+
+        // calculate new fitness, etc.
+        swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x);
+        if (swarm->particles[i]->fitness < swarm->particles[i]->previous_best_fitness) {
+            swarm->particles[i]->previous_best_fitness = swarm->particles[i]->fitness;
+            memcpy(swarm->particles[i]->previous_best_x, swarm->particles[i]->x, nr_dimensions * sizeof(double));
+
+            if (swarm->particles[i]->fitness < new_best_fitness)
+                new_best_fitness = swarm->particles[i]->fitness;
+        }
     }
 
     // update particles neighbourhoods
-    if (new_best_fitness < swarm->best_fitness)
-        set_neighbourhoods(swarm->particles, pso_config);
-    else {
-        // particles get informed by its neighbours
-    }
+    if (new_best_fitness < swarm->best_fitness) {
+        swarm->best_fitness = new_best_fitness;
 
-    for (i = 0; i < nr_iterations; ++i) {
+        // particles get informed by its neighbours
+    } else {
+        set_neighbourhoods(swarm->particles, pso_config);
     }
 
     return i;
