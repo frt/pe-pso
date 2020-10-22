@@ -79,6 +79,33 @@ void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*f
     particle->neighbourhood_best_fitness = particle->fitness;
 }
 
+void inform_neighbours(particle_t **particles, pso_config_t *pso_config)
+{
+    int i, j;
+
+    int nr_particles = pso_config->nr_particles;
+    int k = pso_config->nr_neighbours;
+    int nr_dimensions = pso_config->search_space_limits->nr_dimensions;
+
+    // at least informs itself
+    for (i = 0; i < nr_particles; ++i) {
+        if (particles[i]->previous_best_fitness < particles[i]->neighbourhood_best_fitness) {
+            particles[i]->neighbourhood_best_fitness = particles[i]->previous_best_fitness;
+            memcpy(particles[i]->neighbourhood_best_x, particles[i]->previous_best_x, nr_dimensions * sizeof(double));
+        }
+    }
+
+    // inform its neighbours
+    for (i = 0; i < nr_particles; ++i) {
+        for (j = 0; j < k; ++j) {
+            if (particles[i]->previous_best_fitness < particles[i]->neighbours[j]->neighbourhood_best_fitness) {
+                particles[i]->neighbours[j]->neighbourhood_best_fitness = particles[i]->previous_best_fitness;
+                memcpy(particles[i]->neighbours[j]->neighbourhood_best_x, particles[i]->previous_best_x, nr_dimensions * sizeof(double));
+            }
+        }
+    }
+}
+
 bool set_neighbourhoods(particle_t **particles, pso_config_t *pso_config)
 {
     int i, j, informed_idx;
@@ -225,9 +252,10 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
 
 int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
 {
-    int i;
+    int i, j;
     double new_best_fitness = swarm->best_fitness;
     int nr_dimensions = swarm->search_space->nr_dimensions;
+    int nr_particles = swarm->nr_particles;
 
     /* Maurice Clerc.
        Stagnation analysis in particle swarm optimization or
@@ -237,28 +265,30 @@ int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(
     static const double c = 1 / 2 + log(2);
 
     // update particles positions
-    for (i = 0; i < nr_iterations; ++i) {
-        move_particle(swarm->particles[i], nr_dimensions, c, w);
+    for (j = 0; j < nr_iterations; ++j) {
+        for (i = 0; i < nr_particles; ++i) {
+            move_particle(swarm->particles[i], nr_dimensions, c, w);
 
-        // calculate new fitness, etc.
-        swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x);
-        if (swarm->particles[i]->fitness < swarm->particles[i]->previous_best_fitness) {
-            swarm->particles[i]->previous_best_fitness = swarm->particles[i]->fitness;
-            memcpy(swarm->particles[i]->previous_best_x, swarm->particles[i]->x, nr_dimensions * sizeof(double));
+            // calculate new fitness, etc.
+            swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x);
+            if (swarm->particles[i]->fitness < swarm->particles[i]->previous_best_fitness) {
+                swarm->particles[i]->previous_best_fitness = swarm->particles[i]->fitness;
+                memcpy(swarm->particles[i]->previous_best_x, swarm->particles[i]->x, nr_dimensions * sizeof(double));
 
-            if (swarm->particles[i]->fitness < new_best_fitness)
-                new_best_fitness = swarm->particles[i]->fitness;
+                if (swarm->particles[i]->fitness < new_best_fitness)
+                    new_best_fitness = swarm->particles[i]->fitness;
+            }
+        }
+
+        // update particles neighbourhoods
+        if (new_best_fitness < swarm->best_fitness) {
+            swarm->best_fitness = new_best_fitness;
+            inform_neighbours(swarm->particles, pso_config);    // particles get informed by its neighbours
+        } else {
+            if (!set_neighbourhoods(swarm->particles, pso_config))  // some error occurred, stop and return the number of iterations run until now
+                return j;
         }
     }
 
-    // update particles neighbourhoods
-    if (new_best_fitness < swarm->best_fitness) {
-        swarm->best_fitness = new_best_fitness;
-
-        // particles get informed by its neighbours
-    } else {
-        set_neighbourhoods(swarm->particles, pso_config);
-    }
-
-    return i;
+    return j;
 }
