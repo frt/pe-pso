@@ -202,6 +202,7 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
     double *p = particle->previous_best_x;
     double *l = particle->neighbourhood_best_x;
     double radius, r, length;
+    bool p_eq_l;
 
     gravity_center = (double *)malloc(nr_dimensions * sizeof(double));
     x1             = (double *)malloc(nr_dimensions * sizeof(double));
@@ -211,10 +212,19 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
         return false;
     }
 
+    for (i = 0, p_eq_l = true; i < nr_dimensions; ++i)
+        if (p[i] != l[i]) {
+            p_eq_l = false;
+            break;
+        }
+
     // calculate the gravity center
-    for (i = 0; i < nr_dimensions; ++i) {
-        gravity_center[i] = x[i] + c * ((p[i] + l[i] - 2 * x[i]) / 3);
-    }
+    if (p_eq_l)
+        for (i = 0; i < nr_dimensions; ++i)
+            gravity_center[i] = x[i] + c * ((p[i] - x[i]) / 2);
+    else
+        for (i = 0; i < nr_dimensions; ++i)
+            gravity_center[i] = x[i] + c * ((p[i] + l[i] - 2 * x[i]) / 3);
 
     // radius ||Gi − xi|| around gravity_center makes a hypersphere
     for (i = 0, radius = 0; i < nr_dimensions; ++i)
@@ -250,7 +260,7 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
     return true;
 }
 
-int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
+int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
 {
     int i, j;
     double new_best_fitness = swarm->best_fitness;
