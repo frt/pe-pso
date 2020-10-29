@@ -170,13 +170,14 @@ void swarm_destroy(swarm_t *swarm)
 }
 
 // updates velocity and move particle
-bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
+bool move_particle(particle_t *particle, limits_t *search_space, double c, double w)
 {
     int i;
     double *gravity_center, *x1;
     double *x = particle->x;
     double *p = particle->previous_best_x;
     double *l = particle->neighbourhood_best_x;
+    int nr_dimensions = search_space->nr_dimensions;
     double radius, r, length;
     bool p_eq_l;
 
@@ -229,6 +230,15 @@ bool move_particle(particle_t *particle, int nr_dimensions, double c, double w)
     for (i = 0; i < nr_dimensions; ++i) {
         particle->velocity[i] = w * particle->velocity[i] + x1[i] - x[i];
         particle->x[i] += particle->velocity[i];
+
+        // confinement
+        if (particle->x[i] < search_space->dimensions[i].min) {
+            particle->x[i] = search_space->dimensions[i].min;
+            particle->velocity[i] = (-0.5) * particle->velocity[i];
+        } else if (particle->x[i] > search_space->dimensions[i].max) {
+            particle->x[i] = search_space->dimensions[i].max;
+            particle->velocity[i] = (-0.5) * particle->velocity[i];
+        }
     }
 
     free(gravity_center);
@@ -253,7 +263,7 @@ int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(
     // update particles positions
     for (j = 0; j < nr_iterations; ++j) {
         for (i = 0; i < nr_particles; ++i) {
-            move_particle(swarm->particles[i], nr_dimensions, c, w);
+            move_particle(swarm->particles[i], swarm->search_space, c, w);
 
             // calculate new fitness
             swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x);
