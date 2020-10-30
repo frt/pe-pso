@@ -144,11 +144,14 @@ swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x
         particle_init(new_particle, pso_config->search_space_limits, fitness_func);
         new->particles[i] = new_particle;
 
-        if (i == 0 || new_particle->fitness < new->best_fitness)
+        if (i == 0 || new_particle->fitness < new->best_fitness) {
             new->best_fitness = new_particle->fitness;
+            new->best_x = new_particle->x;
+        }
     }
     new->nr_particles = pso_config->nr_particles;
     new->best_fitness_iteration = 0;
+    new->iteration = 0;
     new->search_space = pso_config->search_space_limits;
     set_neighbourhoods(new->particles, pso_config);
 
@@ -249,6 +252,7 @@ bool move_particle(particle_t *particle, limits_t *search_space, double c, doubl
 int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
 {
     int i, j;
+    double *new_best_x = swarm->best_x;
     double new_best_fitness = swarm->best_fitness;
     int nr_dimensions = swarm->search_space->nr_dimensions;
     int nr_particles = swarm->nr_particles;
@@ -277,15 +281,21 @@ int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(
 
                 inform_neighbours(swarm->particles[i], pso_config);    // inform its neighbours
 
-                if (swarm->particles[i]->fitness < new_best_fitness)
+                if (swarm->particles[i]->fitness < new_best_fitness) {
                     new_best_fitness = swarm->particles[i]->fitness;
+                    new_best_x = swarm->particles[i]->previous_best_x;
+                }
             }
         }
 
+        swarm->iteration += 1;
+
         // update particles neighbourhoods
-        if (new_best_fitness < swarm->best_fitness)
+        if (new_best_fitness < swarm->best_fitness) {
             swarm->best_fitness = new_best_fitness;
-        else
+            swarm->best_x = new_best_x;
+            swarm->best_fitness_iteration = swarm->iteration;
+        } else
             set_neighbourhoods(swarm->particles, pso_config);
     }
 

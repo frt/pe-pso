@@ -37,8 +37,12 @@ typedef struct swarm {
     particle_t **particles;
     int nr_particles;
     limits_t *search_space;
+
+    double *best_x;
     double best_fitness;
     int best_fitness_iteration;
+
+    int iteration;
 } swarm_t;
 
 /**
@@ -66,4 +70,4 @@ void swarm_destroy(swarm_t *swarm);
  *
  * \return The number of iterations that where run.
  */
-int iterarions(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations);
+int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations);
