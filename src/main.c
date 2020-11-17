@@ -130,14 +130,8 @@ algorithm_stats_t *pso_get_stats()
 status_t pso_get_population(population_t **pop2send)
 {
     int i;
-    algorithm_stats_t *stats;
-
-    stats = pso_get_stats();
-    if (stats == NULL)
-        return FAIL;
 
     if (population_create(pop2send, swarm->nr_particles) != SUCCESS) {
-        free(stats);
         return FAIL;
     }
 
@@ -145,7 +139,6 @@ status_t pso_get_population(population_t **pop2send)
         (*pop2send)->individuals[i]->var = swarm->particles[i]->x;
         (*pop2send)->individuals[i]->var_size = swarm->search_space->nr_dimensions;
     }
-    (*pop2send)->stats = stats;
 
     return SUCCESS;
 }
