@@ -5,6 +5,7 @@ autom4te.cache/
 compile
 config.status
 configure
+configure~
 configure.scan
 depcomp
 install-sh

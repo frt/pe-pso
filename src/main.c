@@ -2,49 +2,57 @@
 #include <math.h>
 #include <stdlib.h>
 #include "pso.h"
-#include "topology_parser/topology_parser.h"
 
-#define ERROR_TOPOLOGY_CREATE 1
-#define ERROR_TOPOLOGY_PARSE 2
+#define ERR_MALLOC 1
 
 #define MODULE_APP "pe-pso"
 
 #define A 10    /* arbitrary constant, default for rastrigin */
-#define N 50    /* number of dimensions */
+/*#define N 50    /* number of dimensions */
 
 /* define here the fitness function that will be used by all algorithms of parallel_evolution */
 /* fitness function for generalized rastrigin function */
 double objective_function(double *x)
 {
     double sum = 0;
-    int i;
+    int i, n;
 
-    for (i = 0; i < N; ++i)
+    n = parallel_evolution_get_number_of_dimensions();
+
+    for (i = 0; i < n; ++i)
         sum += x[i] * x[i] - A * cos(2 * M_PI * x[i]);
 
-    return A * N + sum;
+    return A * n + sum;
 }
 
-dimension_t dimensions[N];
 limits_t limits;
 pso_config_t pso_config;
 swarm_t *swarm;
 int pso_iterations = 0;
-int pso_max_iterations = 5000;
+int pso_max_iterations = 5000;  // default value
 
-void pso_init()
+void pso_init(config_t *config)
 {
-    int i;
+    int i, n;
+    dimension_t *dimensions = NULL;
 
-    for (i = 0; i < N; ++i) {
-        dimensions[i].min = -12;
-        dimensions[i].max = 12;
+    parallel_evolution_config_lookup_int(config, "pso.max_iterations", &pso_max_iterations);
+
+    n = parallel_evolution_get_number_of_dimensions();
+    dimensions = (dimension_t *)malloc(n * sizeof(dimension_t));    // TODO: dealloc this somewhere
+    if (dimensions == NULL) {
+        parallel_evolution_log(LOG_PRIORITY_ERR, MODULE_APP, "Couldn't allocate memory for dimensions limits. This is the end...");
+        exit(ERR_MALLOC);
+    }
+    for (i = 0; i < n; ++i) {
+        dimensions[i].min = parallel_evolution_get_limit_min(i);
+        dimensions[i].max = parallel_evolution_get_limit_max(i);
     }
     limits.dimensions = dimensions;
-    limits.nr_dimensions = N;
+    limits.nr_dimensions = n;
 
-    pso_config.nr_particles = 50;
-    pso_config.nr_neighbours = 3;
+    parallel_evolution_config_lookup_int(config, "pso.nr_particles", &pso_config.nr_particles);
+    parallel_evolution_config_lookup_int(config, "pso.nr_neighbours", &pso_config.nr_neighbours);
     pso_config.search_space_limits = &limits;
 
     swarm = swarm_create(&pso_config, objective_function);
@@ -147,31 +155,6 @@ int main(int argc, char **argv)
 {
     algorithm_t *pso;
     int ret;
-    topology_t *topology;
-    char *topology_file;
-    char topology_file_default[] = "ring.topology";
-
-    if (argc == 2)  // program name + args count
-        topology_file = argv[1];
-    else
-        topology_file = topology_file_default;
-
-    /* create the topology */
-    if (topology_create(&topology) != SUCCESS) {
-        parallel_evolution_log(LOG_PRIORITY_ERR, MODULE_APP, "Topology could not be created. Quit.");
-        return ERROR_TOPOLOGY_CREATE;
-    }
-
-    /* parse topology from file */
-    if (topology_parser_parse(topology, topology_file) != SUCCESS) {
-        topology_destroy(&topology);
-        parallel_evolution_log(LOG_PRIORITY_ERR, MODULE_APP, "Topology could not be parsed. This is the end...");
-        return ERROR_TOPOLOGY_PARSE;
-    }
-
-    parallel_evolution_set_topology(topology);
-
-    parallel_evolution_set_number_of_dimensions(N);
     algorithm_create(&pso,
                         pso_init,
                         pso_run_iterations,
@@ -181,11 +164,9 @@ int main(int argc, char **argv)
                         pso_get_population,   // the population that will be sent to the main node
                         pso_get_stats);
     parallel_evolution_set_algorithm(pso);
-    parallel_evolution_set_migration_interval(100);
     ret = parallel_evolution_run(&argc, &argv);
 
     algorithm_destroy(&pso);
-    topology_destroy(&topology);
 
     return ret;
 }
