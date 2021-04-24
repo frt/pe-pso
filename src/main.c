@@ -12,12 +12,10 @@
 
 /* define here the fitness function that will be used by all algorithms of parallel_evolution */
 /* fitness function for generalized rastrigin function */
-double objective_function(double *x)
+double objective_function(const double *x, int n)
 {
     double sum = 0;
-    int i, n;
-
-    n = parallel_evolution_get_number_of_dimensions();
+    int i;
 
     for (i = 0; i < n; ++i)
         sum += x[i] * x[i] - A * cos(2 * M_PI * x[i]);
@@ -79,7 +77,7 @@ void pso_insert_migrant(migrant_t *migrant)
         worse_particle->x[d] = migrant->var[d];
 
     // compute fitness
-    worse_particle->fitness = objective_function(worse_particle->x);
+    worse_particle->fitness = objective_function(worse_particle->x, parallel_evolution_get_number_of_dimensions());
 
     // update the previous best and its neighbourhood
     if (worse_particle->fitness < worse_particle->previous_best_fitness) {

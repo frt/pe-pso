@@ -58,7 +58,7 @@ void particle_destroy(particle_t *particle);
  *
  * \return The pointer to the swarm created or NULL if failed.
  */
-swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x));
+swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(const double *x, int n));
 void swarm_destroy(swarm_t *swarm);
 
 /**
@@ -70,4 +70,4 @@ void swarm_destroy(swarm_t *swarm);
  *
  * \return The number of iterations that where run.
  */
-int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations);
+int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(const double *x, int n), int nr_iterations);

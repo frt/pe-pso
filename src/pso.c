@@ -53,7 +53,7 @@ void particle_destroy(particle_t *particle)
     free(particle);
 }
 
-void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*fitness_func)(double *x))
+void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*fitness_func)(const double *x, int n))
 {
     int i;
 
@@ -66,7 +66,7 @@ void particle_init(particle_t *particle, limits_t *dimensions_limits, double (*f
 
         particle->velocity[i] = rd_uniform(min_d - particle->x[i], max_d - particle->x[i]);
     }
-    particle->fitness = fitness_func(particle->x);
+    particle->fitness = fitness_func(particle->x, dimensions_limits->nr_dimensions);
     particle->previous_best_fitness = particle->fitness;
     particle->neighbourhood_best_fitness = particle->fitness;
     particle->neighbourhood_best_x = particle->previous_best_x;
@@ -121,7 +121,7 @@ void set_neighbourhoods(particle_t **particles, pso_config_t *pso_config)
     }
 }
 
-swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(double *x))
+swarm_t *swarm_create(pso_config_t *pso_config, double (*fitness_func)(const double *x, int n))
 {
     int i;
     swarm_t *new;
@@ -249,7 +249,7 @@ bool move_particle(particle_t *particle, limits_t *search_space, double c, doubl
     return true;
 }
 
-int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(double *x), int nr_iterations)
+int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(const double *x, int n), int nr_iterations)
 {
     int i, j;
     double *new_best_x = swarm->best_x;
@@ -270,7 +270,7 @@ int iterations(swarm_t *swarm, pso_config_t *pso_config, double (*fitness_func)(
             move_particle(swarm->particles[i], swarm->search_space, c, w);
 
             // calculate new fitness
-            swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x);
+            swarm->particles[i]->fitness = fitness_func(swarm->particles[i]->x, nr_dimensions);
         }
 
         // update previous bests and neighbours
